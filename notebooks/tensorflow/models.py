@@ -70,6 +70,10 @@ class VAE_CNN(object):
     def input(self):
         return self.__x
 
+    @property
+    def image_in(self):
+        return self.__x_image
+
 
 
 
