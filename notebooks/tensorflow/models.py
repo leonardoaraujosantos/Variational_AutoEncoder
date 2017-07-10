@@ -23,13 +23,13 @@ class VAE_CNN(object):
 
         with tf.name_scope('LATENT'):
             # Reshape: Input 7x7x32 after [7x7x32]
-            self.__enc_out = tf.reshape(self.__conv2_act, [-1, 7 * 7 * 32])
+            self.__enc_out = tf.reshape(self.__conv2_act, [tf.shape(self.__x)[0], 7 * 7 * 32])
 
             # Add linear ops for mean and variance
             self.__w_mean = util.linear_layer(self.__enc_out, 7 * 7 * 32, size_out, "w_mean")
             self.__w_stddev = util.linear_layer(self.__enc_out, 7 * 7 * 32, size_out, "w_stddev")
 
-            self.__samples = tf.random_normal([-1, size_out], 0, 1, dtype=tf.float32)
+            self.__samples = tf.random_normal([tf.shape(self.__x)[0], size_out], 0, 1, dtype=tf.float32)
             self.__guessed_z = self.__w_mean + (self.__w_stddev * self.__samples)
 
         with tf.name_scope('DECODER'):
@@ -38,16 +38,16 @@ class VAE_CNN(object):
 
             # Linear layer
             self.__z_develop = util.linear_layer(self.__guessed_z, size_out, 7 * 7 * 32, 'z_matrix')
-            self.__z_develop_act = util.relu(tf.reshape(self.__z_develop, [-1, 7, 7, 32]), do_summary=False)
+            self.__z_develop_act = util.relu(tf.reshape(self.__z_develop, [tf.shape(self.__x)[0], 7, 7, 32]), do_summary=False)
 
-            self.__conv_t2_out = util.conv2d_transpose(self.__z_develop_act, (5, 5), (14, 14), 32,16, 2, name="dconv1",do_summary=False)
+            self.__conv_t2_out = util.conv2d_transpose(self.__z_develop_act, (5, 5), (14, 14), 32,16, 2, name="dconv1",do_summary=False, pad='SAME')
             self.__conv_t2_out_act = util.relu(self.__conv_t2_out, do_summary=False)
 
-            self.__conv_t1_out = util.conv2d_transpose(self.__conv_t2_out_act, (5, 5), (img_size, img_size), 16, 1, 2,name="dconv2", do_summary=False)
+            self.__conv_t1_out = util.conv2d_transpose(self.__conv_t2_out_act, (5, 5), (img_size, img_size), 16, 1, 2,name="dconv2", do_summary=False, pad='SAME')
 
             # Model output
             self.__y = util.sigmoid(self.__conv_t1_out)
-            self.__y_flat = tf.reshape(self.__y, [-1, 28 * 28])
+            self.__y_flat = tf.reshape(self.__y, [tf.shape(self.__x)[0], 28 * 28])
 
 
     @property
