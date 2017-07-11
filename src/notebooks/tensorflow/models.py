@@ -3,7 +3,7 @@ import model_util as util
 
 
 class VAE_CNN(object):
-    def __init__(self, img_size = 28, latent_size=20):
+    def __init__(self, img_size=28, latent_size=20):
         self.__x = tf.placeholder(tf.float32, shape=[None, img_size * img_size], name='IMAGE_IN')
         self.__x_image = tf.reshape(self.__x, [-1, img_size, img_size, 1])
 
@@ -91,6 +91,40 @@ class VAE_CNN(object):
     @property
     def image_in(self):
         return self.__x_image
+
+
+class VAE_CNN_GEN(object):
+    def __init__(self, img_size=28, latent_size=20):
+        self.__x = tf.placeholder(tf.float32, shape=[None, latent_size], name='LATENT_IN')
+
+        with tf.name_scope('DECODER'):
+            # Linear layer
+            self.__z_develop = util.linear_layer(self.__x, latent_size, 7 * 7 * 32,
+                                                 'z_matrix', do_summary=False)
+            self.__z_develop_act = util.relu(tf.reshape(self.__z_develop, [tf.shape(self.__x)[0], 7, 7, 32]),
+                                             do_summary=False)
+
+            # Transpose API
+            # Kernel, output size, in_volume, out_volume, stride
+            self.__conv_t2_out = util.conv2d_transpose(self.__z_develop_act, (5, 5), (14, 14), 32,16, 2,
+                                                       name="dconv1",do_summary=False, pad='SAME')
+            self.__conv_t2_out_act = util.relu(self.__conv_t2_out, do_summary=False)
+
+            self.__conv_t1_out = util.conv2d_transpose(self.__conv_t2_out_act, (5, 5), (img_size, img_size), 16, 1, 2,
+                                                       name="dconv2", do_summary=False, pad='SAME')
+
+            # Model output
+            self.__y = util.sigmoid(self.__conv_t1_out)
+
+
+    @property
+    def output(self):
+        return self.__y
+
+
+    @property
+    def input(self):
+        return self.__x
 
 
 class CAE_CNN(object):
