@@ -187,7 +187,7 @@ def fc_layer(x, channels_in, channels_out, name="fc", do_summary=True):
         return activation
 
 
-def linear_layer(x, channels_in, channels_out, name="linear", do_summary=True):
+def linear_layer(x, channels_in, channels_out, name="linear", do_summary=False):
     with tf.name_scope(name):
         # Initialize weights with Xavier Initialization
         shape = [channels_in, channels_out]
