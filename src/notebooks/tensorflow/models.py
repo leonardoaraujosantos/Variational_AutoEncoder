@@ -383,3 +383,81 @@ class VAE_AutoEncoderSegnet(object):
     def conv1(self):
         return self.__conv1_act
 
+class VAE_Segnet_Generator(object):
+    def __init__(self, training_mode=False, img_size = 224, latent_size=40):
+        self.__x = tf.placeholder(tf.float32, shape=[None, latent_size], name='LATENT_IN')
+
+        with tf.name_scope('LATENT'):
+            # Linear layer
+            self.__z_develop = util.linear_layer(self.__x, latent_size, 9 * 9 * 32,
+                                                 'z_matrix', do_summary=False)
+            self.__z_develop_act = util.relu(tf.reshape(self.__z_develop, [tf.shape(self.__x)[0], 9, 9, 32]),
+                                             do_summary=False)
+
+        with tf.name_scope('DECODER'):
+
+            ##### DECODER (At this point we have 1x18x64
+            # Kernel, output size, in_volume, out_volume, stride
+            self.__conv_t7_out = util.conv2d_transpose(self.__z_develop_act, (3, 3), (19, 19), 32, 32, 2, name="dconv1",
+                                                       do_summary=False)
+            self.__conv_t7_out_bn = util.batch_norm(self.__conv_t7_out, training_mode, name='bn_t_c7')
+            self.__conv_t7_out_act = util.relu(self.__conv_t7_out_bn, do_summary=False)
+
+            self.__conv_t6_out = util.conv2d_transpose(self.__conv_t7_out_act, (3, 3), (21, 21), 32, 32, 1, name="dconv2",
+                                                       do_summary=False)
+            self.__conv_t6_out_bn = util.batch_norm(self.__conv_t6_out, training_mode, name='bn_t_c6')
+            self.__conv_t6_out_act = util.relu(self.__conv_t6_out, do_summary=False)
+
+            self.__conv_t5_out = util.conv2d_transpose(self.__conv_t6_out_act, (3, 3), (23, 23), 32, 32, 1, name="dconv3",
+                                                       do_summary=False)
+            self.__conv_t5_out_bn = util.batch_norm(self.__conv_t5_out, training_mode, name='bn_t_c5')
+            self.__conv_t5_out_act = util.relu(self.__conv_t5_out_bn, do_summary=False)
+
+            self.__conv_t4_out = util.conv2d_transpose(
+                self.__conv_t5_out_act,
+                (3, 3), (25, 25), 32, 64, 1, name="dconv4",do_summary=False)
+            self.__conv_t4_out_bn = util.batch_norm(self.__conv_t4_out, training_mode, name='bn_t_c4')
+            self.__conv_t4_out_act = util.relu(self.__conv_t4_out_bn, do_summary=False)
+
+            self.__conv_t3_out = util.conv2d_transpose(
+                self.__conv_t4_out_act,
+                (5, 5), (53, 53), 64, 128, 2, name="dconv5",do_summary=False)
+            self.__conv_t3_out_bn = util.batch_norm(self.__conv_t3_out, training_mode, name='bn_t_c3')
+            self.__conv_t3_out_act = util.relu(self.__conv_t3_out_bn, do_summary=False)
+
+            self.__conv_t2_out = util.conv2d_transpose(
+                self.__conv_t3_out_act,
+                (5, 5), (110, 110), 128, 64, 2, name="dconv6",do_summary=False)
+            self.__conv_t2_out_bn = util.batch_norm(self.__conv_t2_out, training_mode, name='bn_t_c2')
+            self.__conv_t2_out_act = util.relu(self.__conv_t2_out_bn, do_summary=False)
+
+            # Observe that the last deconv depth is the same as the number of classes
+            self.__conv_t1_out = util.conv2d_transpose(
+                self.__conv_t2_out_act,
+                (5, 5), (img_size, img_size), 64, 3, 2, name="dconv7",do_summary=False)
+            self.__conv_t1_out_bn = util.batch_norm(self.__conv_t1_out, training_mode, name='bn_t_c1')
+
+            # Model output (It's not the segmentation yet...)
+            self.__y = util.relu(self.__conv_t1_out_bn, do_summary = False)
+
+            # Calculate flat tensor for Binary Cross entropy loss
+            self.__y_flat = tf.reshape(self.__y, [tf.shape(self.__x)[0], img_size * img_size * 3])
+            self.__x_flat = tf.reshape(self.__x, [tf.shape(self.__x)[0], img_size * img_size * 3])
+
+
+    @property
+    def output(self):
+        return self.__y
+
+
+    @property
+    def input(self):
+        return self.__x
+
+    @property
+    def output_flat(self):
+        return self.__y_flat
+
+    @property
+    def input_flat(self):
+        return self.__x_flat
