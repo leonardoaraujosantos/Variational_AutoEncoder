@@ -37,12 +37,14 @@ class HandleData:
         self.__train_perc = train_perc
         self.__val_perc = val_perc
         print("Loading training data")
-        # Handle HDF5/LMDB datasets (Load content to memory)
-        self.handle_file_dataset(path,path_val,train_perc,val_perc,shuffle)
 
         # Allow split only if val_perc different than zero or
-        if val_perc == 0 and path_val == '':
+        if val_perc == 0:
             self.__split_training = False
+
+        # Handle HDF5/LMDB datasets (Load content to memory)
+        self.handle_file_dataset(path,path_val,train_perc=train_perc,val_perc=val_perc,shuffle=shuffle)
+
 
         # Get number of images
         self.__num_train_images = len(self.__train_xs)
