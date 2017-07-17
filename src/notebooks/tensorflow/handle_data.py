@@ -72,7 +72,7 @@ class HandleData:
             self.__train_xs = self.__xs
             self.__train_ys = self.__ys
 
-    def LoadTrainBatch(self, batch_size, crop_start=126, crop_end=226, should_augment=False):
+    def LoadTrainBatch(self, batch_size, size_x=100, size_y=100, should_augment=False, do_resize=False):
         '''Load training batch, if batch_size=-1 load all dataset'''
         x_out = []
         y_out = []
@@ -88,6 +88,8 @@ class HandleData:
             image = self.__train_xs[(self.__train_batch_pointer + i) % self.__num_train_images]
             # Crop top, resize to 66x200 and divide by 255.0
             image = image / 255.0
+            if do_resize == True:
+                image = scipy.misc.imresize(image, [size_x, size_y])
             x_out.append(image)
             label = self.__train_ys[(self.__train_batch_pointer + i) % self.__num_train_images]
             y_out.append(label)
