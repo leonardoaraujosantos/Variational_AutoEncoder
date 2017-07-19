@@ -59,9 +59,49 @@ def put_kernels_on_grid(kernel, grid_Y, grid_X, pad=1):
     return tf.image.convert_image_dtype(x7, dtype=tf.uint8)
 
 
+# Create the separable convolution block
+# References
+# https://www.tensorflow.org/api_docs/python/tf/nn/depthwise_conv2d
+# http://tetration.xyz/tensorflow_chessbot/tensorflow_compvision.html
+# https://github.com/Zehaos/MobileNet
+# https://github.com/marvis/pytorch-mobilenet
+def conv2d_separable(x, k_h, k_w, channels_in, channels_out, stride, is_training,
+                     name="conv_sep", pad='VALID', do_summary=True, multiplier=1):
+    with tf.variable_scope(name):
+        # Define weights
+        # Initialize weights with Xavier Initialization
+        shape = [k_h, k_w, channels_in, multiplier]
+        initializer = tf.contrib.layers.xavier_initializer_conv2d()
+        w = tf.Variable(initializer(shape=shape), name="weights")
+
+        # Depthwise Convolution (Did not find bias been mentioned, also did not find on other implementation)
+        conv_depthwise = tf.nn.depthwise_conv2d(x, w, strides=[1, stride, stride, 1], padding=pad)
+
+        # Follow with batchnorm
+        conv_depth_bn = batch_norm(conv_depthwise, is_training, name=name+'_bn')
+
+        # Add Relu (Bad design create the activation optional...)
+        conv_depth_bn_act = relu(conv_depth_bn, do_summary=False)
+
+        # Add 1x1 (Pointwise convolution)
+        ptwise = conv2d(conv_depth_bn_act, 1, 1, channels_in, channels_out, stride, name+"_ptwise", do_summary=False)
+
+        # Follow with batchnorm
+        ptwise_bn = batch_norm(ptwise, is_training, name=name + 'ptwise_bn')
+        ptwise_act = relu(ptwise_bn, do_summary=False)
+
+        if do_summary:
+            # Add summaries for helping debug
+            tf.summary.histogram("weights", w)
+            tf.summary.histogram("activation", ptwise_act)
+
+        return ptwise_act
+
+
+
 def conv2d(x, k_h, k_w, channels_in, channels_out, stride, name="conv", viewWeights=False, pad='VALID',
            do_summary=True):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         # Define weights
         # Initialize weights with Xavier Initialization
         shape = [k_h, k_w, channels_in, channels_out]
@@ -98,7 +138,7 @@ def conv2d(x, k_h, k_w, channels_in, channels_out, stride, name="conv", viewWeig
 # 2d Transposed convolution (Deconvolution)
 def conv2d_transpose(x, kernel, out_size, channels_in, channels_out, stride, name="deconv", pad='VALID',
                      do_summary=True):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         # Define weights (Notice that out/in channels are swapped on transposed conv)
         w = tf.Variable(tf.truncated_normal([kernel[0], kernel[1], channels_out, channels_in], stddev=0.1),
                         name="weights")
@@ -122,7 +162,7 @@ def conv2d_transpose(x, kernel, out_size, channels_in, channels_out, stride, nam
 
 
 def sigmoid(x, name="Sigmoid", do_summary=True):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         activation = tf.sigmoid(x)
 
         if do_summary:
@@ -132,7 +172,7 @@ def sigmoid(x, name="Sigmoid", do_summary=True):
 
 
 def relu(x, name="Relu", do_summary=True):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         activation = tf.nn.relu(x)
 
         if do_summary:
@@ -155,7 +195,7 @@ def relu(x, name="Relu", do_summary=True):
 # with tf.control_dependencies(update_ops):
 #    train_op = optimizer.minimize(loss)
 def batch_norm(x, is_training, name="batch_norm"):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         # There is a flag called fused that switch implementation between
         # (tf.nn.fused_batch_norm and nn.batch_normalization), but on the documentation there is no difference between
         # them.
@@ -166,12 +206,12 @@ def batch_norm(x, is_training, name="batch_norm"):
 
 
 def max_pool(x, k_h, k_w, S, name="maxpool"):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         return tf.nn.max_pool(x, ksize=[1, k_h, k_w, 1], strides=[1, S, S, 1], padding='SAME')
 
 
 def fc_layer(x, channels_in, channels_out, name="fc", do_summary=True):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         # Initialize weights with Xavier Initialization
         shape = [channels_in, channels_out]
         initializer = tf.contrib.layers.xavier_initializer()
@@ -188,7 +228,7 @@ def fc_layer(x, channels_in, channels_out, name="fc", do_summary=True):
 
 
 def linear_layer(x, channels_in, channels_out, name="linear", do_summary=False):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         # Initialize weights with Xavier Initialization
         shape = [channels_in, channels_out]
         initializer = tf.contrib.layers.xavier_initializer()
@@ -205,7 +245,7 @@ def linear_layer(x, channels_in, channels_out, name="linear", do_summary=False):
 
 
 def bound_layer(val_in, bound_val, name="bound_scale"):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         # Bound val_in between -1..1 and scale by multipling by bound_val
         activation = tf.multiply(tf.atan(val_in), bound_val)
         # Add summaries for helping debug
@@ -215,7 +255,7 @@ def bound_layer(val_in, bound_val, name="bound_scale"):
 
 # Let backprop modulate how much signal it wants ...
 def gate_tensor(tensor_in, name="gate"):
-    with tf.name_scope(name):
+    with tf.variable_scope(name):
         mu = tf.Variable(tf.random_normal([1], stddev=0.35),name="modulate")
         tf.summary.scalar("plot_gate_"+name, tf.reshape(mu,[]))
         return tf.multiply(tf.sigmoid(mu), tensor_in)
@@ -227,7 +267,7 @@ def gate_tensor(tensor_in, name="gate"):
 # https://github.com/devsisters/DQN-tensorflow/issues/16
 # https://stackoverflow.com/questions/36462962/loss-clipping-in-tensor-flow-on-deepminds-dqn/38363141
 def huber_loss(labels, predidction, delta=1.0):
-    with tf.name_scope('Huber_Loss'):
+    with tf.variable_scope('Huber_Loss'):
         # Calculate a residual difference (error)
         residual = tf.abs(labels - predidction)
 
@@ -250,7 +290,7 @@ def huber_loss(labels, predidction, delta=1.0):
 # https://stackoverflow.com/questions/39574999/tensorflow-tf-image-functions-on-an-image-batch
 # https://www.tensorflow.org/api_docs/python/tf/map_fn
 def augment_op(image_tensor, label_img_tensor):
-    with tf.name_scope('augmentation'):
+    with tf.variable_scope('augmentation'):
         def flip_image():
             # Map the flip_left_right to each image on your batch
             distorted_image = tf.map_fn(lambda img: tf.image.flip_left_right(img), image_tensor)
