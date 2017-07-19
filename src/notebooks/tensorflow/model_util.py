@@ -84,7 +84,8 @@ def conv2d_separable(x, k_h, k_w, channels_in, channels_out, stride, is_training
         conv_depth_bn_act = relu(conv_depth_bn, do_summary=False)
 
         # Add 1x1 (Pointwise convolution)
-        ptwise = conv2d(conv_depth_bn_act, 1, 1, channels_in*multiplier, channels_out, 1, name+"_ptwise", do_summary=False)
+        ptwise = conv2d(conv_depth_bn_act, 1, 1, channels_in*multiplier, channels_out, 1,
+                        name+"_ptwise", do_summary=False)
 
         # Follow with batchnorm
         ptwise_bn = batch_norm(ptwise, is_training, name=name + 'ptwise_bn')

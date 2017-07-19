@@ -44,7 +44,8 @@ class VAE_CNN(object):
             #self.__embedding = tf.Variable(tf.zeros_like(self.__guessed_z), name="test_embedding")
             # self.__assignment = self.__embedding.assign(self.__guessed_z)
             self.__embedding = tf.Variable(tf.zeros([50, latent_size]), name="test_embedding")
-            self.__assignment = self.__embedding.assign(tf.reshape(self.__guessed_z, [tf.shape(self.__x)[0], latent_size]))
+            self.__assignment = self.__embedding.assign(
+                tf.reshape(self.__guessed_z, [tf.shape(self.__x)[0], latent_size]))
 
             # Linear layer
             self.__z_develop = util.linear_layer(self.__guessed_z, latent_size, 7 * 7 * 32,
@@ -162,7 +163,8 @@ class CAE_CNN(object):
             #self.__embedding = tf.Variable(tf.zeros_like(self.__guessed_z), name="test_embedding")
             # self.__assignment = self.__embedding.assign(self.__guessed_z)
             self.__embedding = tf.Variable(tf.zeros([50, latent_size]), name="test_embedding")
-            self.__assignment = self.__embedding.assign(tf.reshape(self.__guessed_z, [tf.shape(self.__x)[0], latent_size]))
+            self.__assignment = self.__embedding.assign(
+                tf.reshape(self.__guessed_z, [tf.shape(self.__x)[0], latent_size]))
 
             # Linear layer
             self.__z_develop = util.linear_layer(self.__guessed_z, latent_size, 7 * 7 * 32,
@@ -281,18 +283,18 @@ class VAE_AutoEncoderSegnet(object):
         with tf.name_scope('DECODER'):
             ##### DECODER (At this point we have 1x18x64
             # Kernel, output size, in_volume, out_volume, stride
-            self.__conv_t7_out = util.conv2d_transpose(self.__z_develop_act, (3, 3), (19, 19), 32, 32, 2, name="dconv1",
-                                                       do_summary=False)
+            self.__conv_t7_out = util.conv2d_transpose(self.__z_develop_act,
+                                                       (3, 3), (19, 19), 32, 32, 2, name="dconv1",do_summary=False)
             self.__conv_t7_out_bn = util.batch_norm(self.__conv_t7_out, training_mode, name='bn_t_c7')
             self.__conv_t7_out_act = util.relu(self.__conv_t7_out_bn, do_summary=False)
 
-            self.__conv_t6_out = util.conv2d_transpose(self.__conv_t7_out_act, (3, 3), (21, 21), 32, 32, 1, name="dconv2",
-                                                       do_summary=False)
+            self.__conv_t6_out = util.conv2d_transpose(self.__conv_t7_out_act,
+                                                       (3, 3), (21, 21), 32, 32, 1, name="dconv2",do_summary=False)
             self.__conv_t6_out_bn = util.batch_norm(self.__conv_t6_out, training_mode, name='bn_t_c6')
             self.__conv_t6_out_act = util.relu(self.__conv_t6_out, do_summary=False)
 
-            self.__conv_t5_out = util.conv2d_transpose(self.__conv_t6_out_act, (3, 3), (23, 23), 32, 32, 1, name="dconv3",
-                                                       do_summary=False)
+            self.__conv_t5_out = util.conv2d_transpose(self.__conv_t6_out_act,
+                                                       (3, 3), (23, 23), 32, 32, 1, name="dconv3",do_summary=False)
             self.__conv_t5_out_bn = util.batch_norm(self.__conv_t5_out, training_mode, name='bn_t_c5')
             self.__conv_t5_out_act = util.relu(self.__conv_t5_out_bn, do_summary=False)
 
@@ -399,18 +401,18 @@ class VAE_Segnet_Generator(object):
 
             ##### DECODER (At this point we have 1x18x64
             # Kernel, output size, in_volume, out_volume, stride
-            self.__conv_t7_out = util.conv2d_transpose(self.__z_develop_act, (3, 3), (19, 19), 32, 32, 2, name="dconv1",
-                                                       do_summary=False)
+            self.__conv_t7_out = util.conv2d_transpose(self.__z_develop_act,
+                                                       (3, 3), (19, 19), 32, 32, 2, name="dconv1",do_summary=False)
             self.__conv_t7_out_bn = util.batch_norm(self.__conv_t7_out, training_mode, name='bn_t_c7')
             self.__conv_t7_out_act = util.relu(self.__conv_t7_out_bn, do_summary=False)
 
-            self.__conv_t6_out = util.conv2d_transpose(self.__conv_t7_out_act, (3, 3), (21, 21), 32, 32, 1, name="dconv2",
-                                                       do_summary=False)
+            self.__conv_t6_out = util.conv2d_transpose(self.__conv_t7_out_act,
+                                                       (3, 3), (21, 21), 32, 32, 1, name="dconv2",do_summary=False)
             self.__conv_t6_out_bn = util.batch_norm(self.__conv_t6_out, training_mode, name='bn_t_c6')
             self.__conv_t6_out_act = util.relu(self.__conv_t6_out, do_summary=False)
 
-            self.__conv_t5_out = util.conv2d_transpose(self.__conv_t6_out_act, (3, 3), (23, 23), 32, 32, 1, name="dconv3",
-                                                       do_summary=False)
+            self.__conv_t5_out = util.conv2d_transpose(self.__conv_t6_out_act,
+                                                       (3, 3), (23, 23), 32, 32, 1, name="dconv3",do_summary=False)
             self.__conv_t5_out_bn = util.batch_norm(self.__conv_t5_out, training_mode, name='bn_t_c5')
             self.__conv_t5_out_act = util.relu(self.__conv_t5_out_bn, do_summary=False)
 
@@ -540,18 +542,18 @@ class CAE_AutoEncoderSegnet(object):
         with tf.name_scope('DECODER'):
             ##### DECODER (At this point we have 1x18x64
             # Kernel, output size, in_volume, out_volume, stride
-            self.__conv_t7_out = util.conv2d_transpose(self.__conv7_act, (3, 3), (19, 19), 32, 32, 2, name="dconv1",
-                                                       do_summary=False)
+            self.__conv_t7_out = util.conv2d_transpose(self.__conv7_act,
+                                                       (3, 3), (19, 19), 32, 32, 2, name="dconv1",do_summary=False)
             self.__conv_t7_out_bn = util.batch_norm(self.__conv_t7_out, training_mode, name='bn_t_c7')
             self.__conv_t7_out_act = util.relu(self.__conv_t7_out_bn, do_summary=False)
 
-            self.__conv_t6_out = util.conv2d_transpose(self.__conv_t7_out_act, (3, 3), (21, 21), 32, 32, 1, name="dconv2",
-                                                       do_summary=False)
+            self.__conv_t6_out = util.conv2d_transpose(self.__conv_t7_out_act,
+                                                       (3, 3), (21, 21), 32, 32, 1, name="dconv2",do_summary=False)
             self.__conv_t6_out_bn = util.batch_norm(self.__conv_t6_out, training_mode, name='bn_t_c6')
             self.__conv_t6_out_act = util.relu(self.__conv_t6_out, do_summary=False)
 
-            self.__conv_t5_out = util.conv2d_transpose(self.__conv_t6_out_act, (3, 3), (23, 23), 32, 32, 1, name="dconv3",
-                                                       do_summary=False)
+            self.__conv_t5_out = util.conv2d_transpose(self.__conv_t6_out_act,
+                                                       (3, 3), (23, 23), 32, 32, 1, name="dconv3",do_summary=False)
             self.__conv_t5_out_bn = util.batch_norm(self.__conv_t5_out, training_mode, name='bn_t_c5')
             self.__conv_t5_out_act = util.relu(self.__conv_t5_out_bn, do_summary=False)
 
@@ -712,8 +714,8 @@ class CAE_AutoEncoderSegnet(object):
             with tf.name_scope('DECODER'):
                 ##### DECODER (At this point we have 1x18x64
                 # Kernel, output size, in_volume, out_volume, stride
-                self.__conv_t7_out = util.conv2d_transpose(self.__conv7_act, (3, 3), (19, 19), 32, 32, 2, name="dconv1",
-                                                           do_summary=False)
+                self.__conv_t7_out = util.conv2d_transpose(self.__conv7_act,
+                                                           (3, 3), (19, 19), 32, 32, 2, name="dconv1",do_summary=False)
                 self.__conv_t7_out_bn = util.batch_norm(self.__conv_t7_out, training_mode, name='bn_t_c7')
                 self.__conv_t7_out_act = util.relu(self.__conv_t7_out_bn, do_summary=False)
 
@@ -1103,33 +1105,34 @@ class CAE_AutoEncoderFE_MaxPool_MobileNet(object):
         #self.__conv2 = util.conv2d(self.__conv1_act, 3, 3, 16, 16, 1, "conv2", do_summary=False)
         #self.__conv2_bn = util.batch_norm(self.__conv2, training_mode, name='bn_c2')
         #self.__conv2_act = util.relu(self.__conv2_bn, do_summary=False)
-        self.__conv2_act = util.conv2d_separable(self.__conv1_act, 3, 3, 16, 16, 1, training_mode, "conv2", do_summary=False, multiplier=multiplier)
+        self.__conv2_act = util.conv2d_separable(self.__conv1_act, 3, 3, 16, 16, 2, training_mode, "conv2",
+                                                 do_summary=False, multiplier=multiplier)
 
         # Add Maxpool
-        self.__conv2_mp_act = util.max_pool(self.__conv2_act, 2,2,2,name="maxpool1")
+        #self.__conv2_mp_act = util.max_pool(self.__conv2_act, 2,2,2,name="maxpool1")
 
         # CONV3: Input 48x48x16 after CONV 3x3 P:0 S:1 H_out: 1 + (48-3)/1 = 46, W_out= 1 + (48-3)/1 = 46
         #self.__conv3 = util.conv2d(self.__conv2_mp_act, 3, 3, 16, 32, 1, "conv3", do_summary=False)
         #self.__conv3_bn = util.batch_norm(self.__conv3, training_mode, name='bn_c3')
         #self.__conv3_act = util.relu(self.__conv3_bn, do_summary=False)
-        self.__conv3_act = util.conv2d_separable(self.__conv2_mp_act, 3, 3, 16, 32, 1, training_mode, "conv3",
+        self.__conv3_act = util.conv2d_separable(self.__conv2_act, 3, 3, 16, 32, 1, training_mode, "conv3",
                                                  do_summary=False, multiplier=multiplier)
 
         # CONV4: Input 46x46x32 after CONV 3x3 P:0 S:2 H_out: 1 + (46-3)/2 = 22, W_out= 1 + (46-3)/2 = 22
         #self.__conv4 = util.conv2d(self.__conv3_act, 3, 3, 32, 64, 1, "conv4", do_summary=False)
         #self.__conv4_bn = util.batch_norm(self.__conv4, training_mode, name='bn_c4')
         #self.__conv4_act = util.relu(self.__conv4_bn, do_summary=False)
-        self.__conv4_act = util.conv2d_separable(self.__conv3_act, 3, 3, 32, 64, 1, training_mode, "conv4",
+        self.__conv4_act = util.conv2d_separable(self.__conv3_act, 3, 3, 32, 64, 2, training_mode, "conv4",
                                                  do_summary=False, multiplier=multiplier)
 
         # Add Maxpool
-        self.__conv4_mp_act = util.max_pool(self.__conv4_act, 2, 2, 2, name="maxpool2")
+        #self.__conv4_mp_act = util.max_pool(self.__conv4_act, 2, 2, 2, name="maxpool2")
 
         # CONV5: Input 22x22x64 after CONV 3x3 P:0 S:1 H_out: 1 + (22-3)/1 = 20, W_out=  1 + (22-3)/1 = 20
         #self.__conv5 = util.conv2d(self.__conv4_mp_act, 3, 3, 64, 64, 1, "conv5", do_summary=False)
         #self.__conv5_bn = util.batch_norm(self.__conv5, training_mode, name='bn_c5')
         #self.__conv5_act = util.relu(self.__conv5_bn, do_summary=False)
-        self.__conv5_act = util.conv2d_separable(self.__conv4_mp_act, 3, 3, 64, 64, 1, training_mode, "conv5",
+        self.__conv5_act = util.conv2d_separable(self.__conv4_act, 3, 3, 64, 64, 1, training_mode, "conv5",
                                                  do_summary=False, multiplier=multiplier)
 
         ##### DECODER (At this point we have 1x18x64
