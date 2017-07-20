@@ -211,6 +211,50 @@ def max_pool(x, k_h, k_w, S, name="maxpool"):
         return tf.nn.max_pool(x, ksize=[1, k_h, k_w, 1], strides=[1, S, S, 1], padding='SAME')
 
 
+# Max pooling with indexes, those indexes will be needed for the unpooling operation (Could be substituted by deconv)
+# References
+# https://www.tensorflow.org/api_docs/python/tf/nn/max_pool_with_argmax
+# There is an issue related to max_pool_with_argmax when padding is applied ...
+# https://github.com/tensorflow/tensorflow/issues/10216
+def max_pool_argmax(x, k_h, k_w, S, name="maxpool"):
+    with tf.variable_scope(name):
+        return tf.nn.max_pool_with_argmax(x, ksize=[1, k_h, k_w, 1], strides=[1, S, S, 1], padding='SAME')
+
+
+# The unpooling operation is not supported on tensorflow, I got this snippet of code from the github issue where people
+# ask to make the unpooling operation available, and google keep saying "Use strided convolution...."
+# References
+# https://github.com/tensorflow/tensorflow/issues/2169
+def unpool(pool, ind, ksize=[1, 2, 2, 1], name='unpool'):
+    """
+       Unpooling layer after max_pool_with_argmax.
+       Args:
+           pool:   max pooled output tensor
+           ind:      argmax indices
+           ksize:     ksize is the same as for the pool
+       Return:
+           unpool:    unpooling tensor
+    """
+    with tf.variable_scope(name):
+        input_shape =  tf.shape(pool)
+        output_shape = [input_shape[0], input_shape[1] * ksize[1], input_shape[2] * ksize[2], input_shape[3]]
+
+        flat_input_size = tf.cumprod(input_shape)[-1]
+        flat_output_shape = tf.stack([output_shape[0], output_shape[1] * output_shape[2] * output_shape[3]])
+
+        pool_ = tf.reshape(pool, tf.stack([flat_input_size]))
+        batch_range = tf.reshape(tf.range(tf.cast(output_shape[0], tf.int64), dtype=ind.dtype),
+                                          shape=tf.stack([input_shape[0], 1, 1, 1]))
+        b = tf.ones_like(ind) * batch_range
+        b = tf.reshape(b, tf.stack([flat_input_size, 1]))
+        ind_ = tf.reshape(ind, tf.stack([flat_input_size, 1]))
+        ind_ = tf.concat([b, ind_], 1)
+
+        ret = tf.scatter_nd(ind_, pool_, shape=tf.cast(flat_output_shape, tf.int64))
+        ret = tf.reshape(ret, tf.stack(output_shape))
+        return ret
+
+
 def fc_layer(x, channels_in, channels_out, name="fc", do_summary=True):
     with tf.variable_scope(name):
         # Initialize weights with Xavier Initialization
