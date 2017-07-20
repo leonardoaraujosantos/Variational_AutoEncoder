@@ -225,32 +225,46 @@ def max_pool_argmax(x, k_h, k_w, S, name="maxpool"):
 # ask to make the unpooling operation available, and google keep saying "Use strided convolution...."
 # References
 # https://github.com/tensorflow/tensorflow/issues/2169
-def unpool(pool, ind, ksize=[1, 2, 2, 1], name='unpool'):
+# https://github.com/mshunshin/SegNetCMR
+def unpool(input_tensor, index_selected_maxpool, ksize=[1, 2, 2, 1], name='unpool'):
     """
        Unpooling layer after max_pool_with_argmax.
        Args:
-           pool:   max pooled output tensor
-           ind:      argmax indices
-           ksize:     ksize is the same as for the pool
+           input_tensor:     max pooled output tensor
+           index_selected_maxpool:      argmax indices from maxpool
+           ksize:    ksize is the same as for the pool
        Return:
            unpool:    unpooling tensor
     """
     with tf.variable_scope(name):
-        input_shape =  tf.shape(pool)
+        # Get input shape
+        input_shape =  tf.shape(input_tensor)
+
+        # Calculate output shape
         output_shape = [input_shape[0], input_shape[1] * ksize[1], input_shape[2] * ksize[2], input_shape[3]]
 
+        # Calculate size for flatten shape (Needed for scatter nd)
         flat_input_size = tf.cumprod(input_shape)[-1]
+
+        # Convert to a tensorflow array
         flat_output_shape = tf.stack([output_shape[0], output_shape[1] * output_shape[2] * output_shape[3]])
 
-        pool_ = tf.reshape(pool, tf.stack([flat_input_size]))
-        batch_range = tf.reshape(tf.range(tf.cast(output_shape[0], tf.int64), dtype=ind.dtype),
-                                          shape=tf.stack([input_shape[0], 1, 1, 1]))
-        b = tf.ones_like(ind) * batch_range
+        # Flat the input tensor
+        input_tensor_flat = tf.reshape(input_tensor, tf.stack([flat_input_size]))
+
+        batch_range = tf.reshape(tf.range(tf.cast(output_shape[0], tf.int64), dtype=index_selected_maxpool.dtype),
+                                 shape=tf.stack([input_shape[0], 1, 1, 1]))
+        b = tf.ones_like(index_selected_maxpool) * batch_range
         b = tf.reshape(b, tf.stack([flat_input_size, 1]))
-        ind_ = tf.reshape(ind, tf.stack([flat_input_size, 1]))
+
+        # Flat indexes (Selected items from maxpol)
+        ind_ = tf.reshape(index_selected_maxpool, tf.stack([flat_input_size, 1]))
         ind_ = tf.concat([b, ind_], 1)
 
-        ret = tf.scatter_nd(ind_, pool_, shape=tf.cast(flat_output_shape, tf.int64))
+        # Use the indexes to sample data from the flatened input
+        ret = tf.scatter_nd(ind_, input_tensor_flat, shape=tf.cast(flat_output_shape, tf.int64))
+
+        # Reshape the result for the calculated output shape
         ret = tf.reshape(ret, tf.stack(output_shape))
         return ret
 

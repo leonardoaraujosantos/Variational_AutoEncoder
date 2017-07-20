@@ -1304,7 +1304,7 @@ class CAE_AutoEncoderFE_MaxPoolUnpool(object):
         # Transposed Conv 96x96x16 ---> 98x98x16
         self.__conv_t2_out = util.conv2d_transpose(
             self.__conv_t3_out_act_unpool,
-            (3, 3), (98, 98), 16, 16, 2, name="dconv4", do_summary=False)
+            (3, 3), (98, 98), 16, 16, 1, name="dconv4", do_summary=False)
         self.__conv_t2_out_bn = util.batch_norm(self.__conv_t2_out, training_mode, name='bn_t_c2')
         self.__conv_t2_out_act = util.relu(self.__conv_t2_out_bn, do_summary=False)
 
